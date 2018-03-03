@@ -213,7 +213,6 @@ int evaluate(string infix, const Map& values, string& postfix, int& result){
 
 int main() {
     
-    
     char vars[] = { 'a', 'e', 'i', 'o', 'u', 'y', '#' };
     int  vals[] = {  3,  -9,   6,   2,   4,   1  };
     Map m;

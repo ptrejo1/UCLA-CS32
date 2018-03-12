@@ -34,7 +34,8 @@ public:
     void recordAlienDestroyed();
     
 private:
-    std::list<Actor> actors;
+    std::list<Actor*> actors;
+    Player* m_player;
 };
 
 #endif // STUDENTWORLD_H_

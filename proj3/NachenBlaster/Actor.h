@@ -5,6 +5,13 @@
 
 const int HIT_BY_SHIP = 0;
 const int HIT_BY_PROJECTILE = 1;
+const int START_DIRECTION = 0;
+const int DEPTH = 0;
+const int PLAYER_START_Y = 128;
+const int PLAYER_SIZE = 1.0;
+const int PLAYER_HIT_POINTS = 50;
+const int PLAYER_MOVE = 6;
+const int FULL_CABBAGE = 30;
 
 class StudentWorld;
 
@@ -80,6 +87,7 @@ public:
     virtual void doSomething();
     virtual void increaseHitPoints(double amt);
     virtual void sufferDamage(double amt, int cause);
+    virtual void moveTo(double x, double y);
     
     // Incease the number of torpedoes the player has by amt.
     void increaseTorpedoes(int amt);

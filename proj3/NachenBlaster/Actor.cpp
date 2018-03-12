@@ -34,7 +34,7 @@ void Actor::moveTo(double x, double y)
         setDead();
 }
 
-Star::Star(StudentWorld* w, double startX, double startY) : Actor(w, startX, startY, IID_STAR, 0, randInt(5, 50)*.001, 3)
+Star::Star(StudentWorld* w, double startX, double startY) : Actor(w, startX, startY, IID_STAR, START_DIRECTION, randInt(5, 50)*.001, DEPTH+3)
 {
 }
 
@@ -66,10 +66,13 @@ void DamageableObject::sufferDamage(double amt, int cause)
     m_hitPoints -= amt;
 }
 
-Player::Player(StudentWorld* w) : DamageableObject(w, 0, 128, IID_NACHENBLASTER, 0, 1.0, 0, 50), m_cabbagePoints(30)
+Player::Player(StudentWorld* w) : DamageableObject(w, 0, PLAYER_START_Y, IID_NACHENBLASTER, START_DIRECTION, PLAYER_SIZE, DEPTH, PLAYER_HIT_POINTS), m_cabbagePoints(FULL_CABBAGE)
 {
 }
 
+// TODO
+// Implement Collisions
+// Probably Done in StudentWorld
 void Player::doSomething()
 {
     
@@ -80,12 +83,45 @@ void Player::doSomething()
         {
             switch (ch)
             {
-                case KEY_PRESS_UP : moveTo(<#double x#>, <#double y#>) break;
-                    
+                case KEY_PRESS_UP:
+                {
+                    moveTo(getX(), getY()+PLAYER_MOVE);
+                    // collided();
+                    break;
+                }
+                case KEY_PRESS_DOWN:
+                {
+                    moveTo(getX(), getY()-PLAYER_MOVE);
+                    // collided();
+                    break;
+                }
+                case KEY_PRESS_LEFT:
+                {
+                    moveTo(getX()-PLAYER_MOVE, getY());
+                    // collided();
+                    break;
+                }
+                case KEY_PRESS_RIGHT:
+                {
+                    moveTo(getX()+PLAYER_MOVE, getY());
+                    // collided();
+                    break;
+                }
+                case KEY_PRESS_SPACE:
+                {
+                    // TODO shoot cabbage
+                    return;
+                }
+                case KEY_PRESS_TAB:
+                {
+                    // TODO shoot torpedo
+                    return;
+                }
             }
-            
         }
-        
+        if (m_cabbagePoints < FULL_CABBAGE) {
+            m_cabbagePoints++;
+        }
     }
     else
         return;
@@ -102,6 +138,12 @@ void Player::sufferDamage(double amt, int cause)
     DamageableObject::sufferDamage(amt, cause);
 }
 
+void Player::moveTo(double x, double y)
+{
+    if (getX() < VIEW_WIDTH && getY() < VIEW_HEIGHT)
+        GraphObject::moveTo(x, y);
+}
+
 void Player::increaseTorpedoes(int amt)
 {
     m_torpedos += amt;
@@ -109,12 +151,12 @@ void Player::increaseTorpedoes(int amt)
 
 int Player::healthPct() const
 {
-    return static_cast<int>((hitPoints()/50)*100);
+    return static_cast<int>((hitPoints()/PLAYER_HIT_POINTS)*100);
 }
 
 int Player::cabbagePct() const
 {
-    return static_cast<int>((m_cabbagePoints/30)*100);
+    return static_cast<int>((m_cabbagePoints/FULL_CABBAGE)*100);
 }
 
 /*

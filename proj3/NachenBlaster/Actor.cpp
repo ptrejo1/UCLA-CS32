@@ -56,6 +56,67 @@ double DamageableObject::hitPoints() const
     return m_hitPoints;
 }
 
+void DamageableObject::increaseHitPoints(double amt)
+{
+    m_hitPoints += amt;
+}
+
+void DamageableObject::sufferDamage(double amt, int cause)
+{
+    m_hitPoints -= amt;
+}
+
+Player::Player(StudentWorld* w) : DamageableObject(w, 0, 128, IID_NACHENBLASTER, 0, 1.0, 0, 50), m_cabbagePoints(30)
+{
+}
+
+void Player::doSomething()
+{
+    
+    if (!isDead())
+    {
+        int ch;
+        if (world()->GameWorld::getKey(ch))
+        {
+            switch (ch)
+            {
+                case KEY_PRESS_UP : moveTo(<#double x#>, <#double y#>) break;
+                    
+            }
+            
+        }
+        
+    }
+    else
+        return;
+
+}
+
+void Player::increaseHitPoints(double amt)
+{
+    DamageableObject::increaseHitPoints(amt);
+}
+
+void Player::sufferDamage(double amt, int cause)
+{
+    DamageableObject::sufferDamage(amt, cause);
+}
+
+void Player::increaseTorpedoes(int amt)
+{
+    m_torpedos += amt;
+}
+
+int Player::healthPct() const
+{
+    return static_cast<int>((hitPoints()/50)*100);
+}
+
+int Player::cabbagePct() const
+{
+    return static_cast<int>((m_cabbagePoints/30)*100);
+}
+
 /*
  
  Notes:
@@ -64,5 +125,8 @@ double DamageableObject::hitPoints() const
  
  Actor moveTo() method will check if its
  on the the screen before calling GraphObject moveTo
+ 
+ rememeber to override sufferDamage
+ (this is kinda weird)
  
 */

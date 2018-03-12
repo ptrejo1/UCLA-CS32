@@ -92,6 +92,10 @@ public:
     
     // Get the number of torpedoes the player has.
     int numTorpedoes() const;
+    
+private:
+    int     m_cabbagePoints;
+    int     m_torpedos;
 };
 
 class Alien : public DamageableObject

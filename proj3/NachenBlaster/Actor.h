@@ -37,8 +37,7 @@ public:
     
 private:
     StudentWorld* m_world;
-    bool        m_dead;
-    
+    bool m_dead;
 };
 
 class Star : public Actor
@@ -58,8 +57,7 @@ public:
 class DamageableObject : public Actor
 {
 public:
-    DamageableObject(StudentWorld* w, double startX, double startY, int imageID,
-                     int startDir, double size, int depth, double hitPoints);
+    DamageableObject(StudentWorld* w, double startX, double startY, int imageID, int startDir, double size, int depth, double hitPoints);
     
     // How many hit points does this actor have left?
     double hitPoints() const;
@@ -70,6 +68,9 @@ public:
     // This actor suffers an amount of damage caused by being hit by either
     // a ship or a projectile (see constants above).
     virtual void sufferDamage(double amt, int cause);
+    
+private:
+    double m_hitPoints;
 };
 
 class Player : public DamageableObject

@@ -30,7 +30,6 @@ int StudentWorld::init()
         Star* star = new Star(this, randInt(0, VIEW_WIDTH)-1, randInt(0, VIEW_HEIGHT-1));
         addActor(star);
     }
-    
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -55,7 +54,7 @@ int StudentWorld::move()
     }
     addStar();
     
-    // remove dead
+    removeDead();
     
     // update display
     
@@ -88,10 +87,17 @@ void StudentWorld::addStar()
     }
 }
 
-void StudentWorld::removeDead(){
-    
-    
-    
+void StudentWorld::removeDead()
+{
+    list<Actor*>::iterator it;
+    for (it = actors.begin(); it != actors.end(); it++)
+    {
+        if ((*it)->isDead())
+        {
+            delete (*it);
+            actors.erase(it);
+        }
+    }
 }
 
 /*

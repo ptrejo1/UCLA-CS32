@@ -12,9 +12,10 @@ class StudentWorld : public GameWorld
 {
 public:
     StudentWorld(std::string assetDir);
+    ~StudentWorld();
     virtual int init();
     virtual int move();
-    virtual void cleanUp();
+    virtual void cleanUp();     // Can call cleanup
     
     // If there's at least one alien that's collided with a, return
     // a pointer to one of them; otherwise, return a null pointer.
@@ -32,6 +33,12 @@ public:
     
     // Record that one more alien on the current level has been destroyed.
     void recordAlienDestroyed();
+    
+    // add stars as necessary
+    void addStar();
+    
+    // delete dead actors
+    void removeDead();
     
 private:
     std::list<Actor*> actors;

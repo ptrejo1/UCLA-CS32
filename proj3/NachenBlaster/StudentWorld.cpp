@@ -14,9 +14,17 @@ StudentWorld::StudentWorld(string assetDir)
 {
 }
 
+StudentWorld::~StudentWorld()
+{
+    cleanUp();
+}
+
 int StudentWorld::init()
 {
+    // add Player
+    m_player = new Player(this);
     
+    // add stars
     for (int i = 0; i < 30; i++)
     {
         Star* star = new Star(this, randInt(0, VIEW_WIDTH)-1, randInt(0, VIEW_HEIGHT-1));
@@ -28,14 +36,43 @@ int StudentWorld::init()
 
 int StudentWorld::move()
 {
-    // This code is here merely to allow the game to build, run, and terminate after you hit enter.
-    // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
-    decLives();
-    return GWSTATUS_PLAYER_DIED;
+    list<Actor*>:: iterator it;
+    for (it = actors.begin(); it != actors.end(); it++)
+    {
+        if (!m_player->isDead())
+        {
+            m_player->doSomething();
+        }
+        if (!(*it)->isDead())
+        {
+            (*it)->doSomething();
+        }
+        
+        //if player died return
+        
+        // if level completed return
+        
+    }
+    addStar();
+    
+    // remove dead
+    
+    // update display
+    
+    //decLives();
+    return GWSTATUS_CONTINUE_GAME;
 }
 
 void StudentWorld::cleanUp()
 {
+    delete m_player;
+    
+    list<Actor*>::iterator it;
+    for (it = actors.begin(); it != actors.end(); it++)
+    {
+        delete (*it);
+        actors.erase(it);
+    }
 }
 
 void StudentWorld::addActor(Actor *a)
@@ -43,7 +80,23 @@ void StudentWorld::addActor(Actor *a)
     actors.push_back(a);
 }
 
+void StudentWorld::addStar()
+{
+    if (randInt(1, 15) == 1)
+    {
+        addActor(new Star(this, VIEW_WIDTH-1, randInt(0, VIEW_HEIGHT-1)));
+    }
+}
+
+void StudentWorld::removeDead(){
+    
+    
+    
+}
+
 /*
+ 
+ ** Player is not in actors list **
  
  i. Add any private data members to this class required to keep track of Stars as well as the NachenBlaster object. You may ignore all other items in the game such as Smallgons, projectiles, goodies, etc. for Part #1.
  

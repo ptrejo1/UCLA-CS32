@@ -28,13 +28,13 @@ void Actor::setDead()
 
 void Actor::moveTo(double x, double y)
 {
-    if (getX() < VIEW_WIDTH && getY() < VIEW_HEIGHT)
+    if (x < VIEW_WIDTH && x >= 0 && y < VIEW_HEIGHT && y >= 0)
         GraphObject::moveTo(x, y);
     else
         setDead();
 }
 
-Star::Star(StudentWorld* w, double startX, double startY) : Actor(w, startX, startY, IID_STAR, START_DIRECTION, randInt(5, 50)*.001, DEPTH+3)
+Star::Star(StudentWorld* w, double startX, double startY) : Actor(w, startX, startY, IID_STAR, START_DIRECTION, randInt(5, 50)*.01, DEPTH+3)
 {
 }
 
@@ -140,7 +140,7 @@ void Player::sufferDamage(double amt, int cause)
 
 void Player::moveTo(double x, double y)
 {
-    if (getX() < VIEW_WIDTH && getY() < VIEW_HEIGHT)
+    if (x < VIEW_WIDTH && x >= 0 && y < VIEW_HEIGHT && y >= 0)
         GraphObject::moveTo(x, y);
 }
 

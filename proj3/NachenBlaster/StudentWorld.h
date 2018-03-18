@@ -41,7 +41,7 @@ public:
     void removeDead();
     
 private:
-    std::list<Actor*> actors;
+    std::vector<Actor*> actors;
     Player* m_player;
 };
 

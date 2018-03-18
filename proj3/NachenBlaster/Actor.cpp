@@ -66,7 +66,7 @@ void DamageableObject::sufferDamage(double amt, int cause)
     m_hitPoints -= amt;
 }
 
-Player::Player(StudentWorld* w) : DamageableObject(w, 0, PLAYER_START_Y, IID_NACHENBLASTER, START_DIRECTION, PLAYER_SIZE, DEPTH, PLAYER_HIT_POINTS), m_cabbagePoints(FULL_CABBAGE)
+Player::Player(StudentWorld* w) : DamageableObject(w, 0, PLAYER_START_Y, IID_NACHENBLASTER, START_DIRECTION, PLAYER_SIZE, DEPTH, PLAYER_HIT_POINTS), m_cabbagePoints(PLAYER_FULL_CABBAGE)
 {
 }
 
@@ -110,16 +110,18 @@ void Player::doSomething()
                 case KEY_PRESS_SPACE:
                 {
                     // TODO shoot cabbage
-                    return;
+                    world()->addActor(new Cabbage(world(), getX()+12, getY()));
+                    world()->playSound(SOUND_PLAYER_SHOOT);
+                    break;
                 }
                 case KEY_PRESS_TAB:
                 {
                     // TODO shoot torpedo
-                    return;
+                    break;
                 }
             }
         }
-        if (m_cabbagePoints < FULL_CABBAGE) {
+        if (m_cabbagePoints < PLAYER_FULL_CABBAGE) {
             m_cabbagePoints++;
         }
     }
@@ -156,7 +158,38 @@ int Player::healthPct() const
 
 int Player::cabbagePct() const
 {
-    return static_cast<int>((m_cabbagePoints/FULL_CABBAGE)*100);
+    return static_cast<int>((m_cabbagePoints/PLAYER_FULL_CABBAGE)*100);
+}
+
+// aliens go here
+
+Projectile::Projectile(StudentWorld* w, double startX, double startY, int imageID, double damageAmt, double deltaX, bool rotates, int imageDir) : Actor(w, startX, startY, imageID, imageDir, PROJECTILE_SIZE, DEPTH+1)
+{
+}
+
+void Projectile::moveTo(double x, double y)
+{
+    if (x < VIEW_WIDTH && x >= 0)
+        GraphObject::moveTo(x, y);
+    else
+        setDead();
+}
+
+Cabbage::Cabbage(StudentWorld* w, double startX, double startY) : Projectile(w, startX, startY, IID_CABBAGE, CABBAGE_DAMAGE, CABBAGE_DELTA_X, true, START_DIRECTION)
+{
+}
+
+void Cabbage::doSomething()
+{
+    if (!isDead())
+    {
+        // TODO
+        moveTo(getX()+CABBAGE_DELTA_X, getY());
+        setDirection(getDirection()+ROTATE);
+        // TODO
+    }
+    else
+        return;
 }
 
 /*

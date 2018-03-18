@@ -35,7 +35,7 @@ int StudentWorld::init()
 
 int StudentWorld::move()
 {
-    list<Actor*>:: iterator it;
+    vector<Actor*>:: iterator it;
     for (it = actors.begin(); it != actors.end(); it++)
     {
         if (!m_player->isDead())
@@ -66,12 +66,12 @@ void StudentWorld::cleanUp()
 {
     delete m_player;
     
-    list<Actor*>::iterator it;
+    vector<Actor*>::iterator it;
     for (it = actors.begin(); it != actors.end(); it++)
     {
         delete (*it);
-        actors.erase(it);
     }
+    actors.clear();
 }
 
 void StudentWorld::addActor(Actor *a)
@@ -89,13 +89,17 @@ void StudentWorld::addStar()
 
 void StudentWorld::removeDead()
 {
-    list<Actor*>::iterator it;
-    for (it = actors.begin(); it != actors.end(); it++)
+    vector<Actor*>::iterator it;
+    for (it = actors.begin(); it != actors.end();)
     {
         if ((*it)->isDead())
         {
             delete (*it);
-            actors.erase(it);
+            it = actors.erase(it);
+        }
+        else
+        {
+            it++;
         }
     }
 }

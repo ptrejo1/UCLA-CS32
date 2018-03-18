@@ -3,15 +3,20 @@
 
 #include "GraphObject.h"
 
-const int HIT_BY_SHIP = 0;
-const int HIT_BY_PROJECTILE = 1;
-const int START_DIRECTION = 0;
-const int DEPTH = 0;
-const int PLAYER_START_Y = 128;
-const int PLAYER_SIZE = 1.0;
-const int PLAYER_HIT_POINTS = 50;
-const int PLAYER_MOVE = 6;
-const int FULL_CABBAGE = 30;
+const int       HIT_BY_SHIP = 0;
+const int       HIT_BY_PROJECTILE = 1;
+
+const int       START_DIRECTION = 0;
+const int       DEPTH = 0;
+const int       PLAYER_START_Y = 128;
+const int       PLAYER_SIZE = 1.0;
+const int       PLAYER_HIT_POINTS = 50;
+const int       PLAYER_MOVE = 6;
+const int       PLAYER_FULL_CABBAGE = 30;
+const int       CABBAGE_DAMAGE = 2;
+const int       CABBAGE_DELTA_X = 8;
+const int       ROTATE = 20;
+const double    PROJECTILE_SIZE = 0.5;
 
 class StudentWorld;
 
@@ -157,8 +162,8 @@ public:
 class Projectile : public Actor
 {
 public:
-    Projectile(StudentWorld* w, double startX, double startY, int imageID,
-               double damageAmt, double deltaX, bool rotates, int imageDir);
+    Projectile(StudentWorld* w, double startX, double startY, int imageID, double damageAmt, double deltaX, bool rotates, int imageDir);
+    virtual void moveTo(double x, double y);
 };
 
 class Cabbage : public Projectile

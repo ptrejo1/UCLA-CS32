@@ -85,31 +85,30 @@ void Player::doSomething()
             {
                 case KEY_PRESS_UP:
                 {
-                    moveTo(getX(), getY()+PLAYER_MOVE);
+                    moveTo(getX(), getY()+PLAYER_SPEED);
                     // collided();
                     break;
                 }
                 case KEY_PRESS_DOWN:
                 {
-                    moveTo(getX(), getY()-PLAYER_MOVE);
+                    moveTo(getX(), getY()-PLAYER_SPEED);
                     // collided();
                     break;
                 }
                 case KEY_PRESS_LEFT:
                 {
-                    moveTo(getX()-PLAYER_MOVE, getY());
+                    moveTo(getX()-PLAYER_SPEED, getY());
                     // collided();
                     break;
                 }
                 case KEY_PRESS_RIGHT:
                 {
-                    moveTo(getX()+PLAYER_MOVE, getY());
+                    moveTo(getX()+PLAYER_SPEED, getY());
                     // collided();
                     break;
                 }
                 case KEY_PRESS_SPACE:
                 {
-                    // TODO shoot cabbage
                     world()->addActor(new Cabbage(world(), getX()+12, getY()));
                     world()->playSound(SOUND_PLAYER_SHOOT);
                     break;
@@ -161,7 +160,78 @@ int Player::cabbagePct() const
     return static_cast<int>((m_cabbagePoints/PLAYER_FULL_CABBAGE)*100);
 }
 
-// aliens go here
+Alien::Alien(StudentWorld* w, double startX, double startY, int imageID, double hitPoints, double damageAmt, double deltaX, double deltaY, double speed, unsigned int scoreValue) : DamageableObject(w, startX, startY, imageID, START_DIRECTION, ALIEN_SIZE, DEPTH+1, hitPoints), m_deltaX(deltaX), m_deltaY(deltaY), m_speed(speed), m_scoreValue(scoreValue), m_flight_plan(0)
+{
+}
+
+bool Alien::collidableWithPlayerFiredProjectile() const
+{
+    return true;
+}
+
+void Alien::sufferDamage(double amt, int cause)
+{
+    DamageableObject::sufferDamage(amt, cause);
+}
+
+void Alien::move()
+{
+    if (m_flight_plan == 0)
+    {
+        m_flight_plan = randInt(1, 32);
+    }
+    if (getY() >= VIEW_HEIGHT-1)
+    {
+        setDeltaY(-1*m_speed);
+    }
+    if(getY() <= 0)
+    {
+        setDeltaY(m_speed);
+    }
+    m_flight_plan--;
+}
+
+void Alien::setDeltaY(double dy)
+{
+    m_deltaY = dy;
+}
+
+void Alien::setSpeed(double speed)
+{
+    m_speed = speed;
+}
+
+double Alien::getDeltaX()
+{
+    return m_deltaX;
+}
+
+double Alien::getDeltaY()
+{
+    return m_deltaY;
+}
+
+// not real imp
+bool Alien::damageCollidingPlayer(double amt)
+{
+    return true;
+}
+
+// not real imp
+void Alien::possiblyDropGoodie()
+{
+    
+}
+
+Smallgon::Smallgon(StudentWorld* w, double startX, double startY) : Alien(w, startX, startY, IID_SMALLGON, 5*(1+(w->getLevel()-1)*0.1), SMALLGON_DAMAGE, SMALLGON_SPEED, SMALLGON_SPEED, SMALLGON_SPEED, SMALLGON_SCORE_VALUE)
+{
+}
+
+void Smallgon::doSomething()
+{
+    move();
+    moveTo(getX()-getDeltaX(), getY()+getDeltaY());
+}
 
 Projectile::Projectile(StudentWorld* w, double startX, double startY, int imageID, double damageAmt, double deltaX, bool rotates, int imageDir) : Actor(w, startX, startY, imageID, imageDir, PROJECTILE_SIZE, DEPTH+1)
 {
@@ -201,7 +271,22 @@ void Cabbage::doSomething()
  Actor moveTo() method will check if its
  on the the screen before calling GraphObject moveTo
  
- rememeber to override sufferDamage
+ TODO:
+ 
+ ** Actor::collidableWithPlayerFiredProjectile
+    needs to be implmented for Alien
+ 
+ ** Alien::damageCollidingPlayer
+ needs to be implmented for Alien
+ 
+ ** Alien::possiblyDropGoodie
+ 
+ 
+ ** rememeber to override sufferDamage
  (this is kinda weird)
+ 
+ ** Alien::damageCollidingPlayer
+ 
+ ** Alien::possiblyDropGoodie
  
 */

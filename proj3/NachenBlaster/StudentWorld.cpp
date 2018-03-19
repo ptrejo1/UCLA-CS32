@@ -30,6 +30,11 @@ int StudentWorld::init()
         Star* star = new Star(this, randInt(0, VIEW_WIDTH)-1, randInt(0, VIEW_HEIGHT-1));
         addActor(star);
     }
+    // smallgon
+    
+    Smallgon* s = new Smallgon(this, VIEW_WIDTH-1, VIEW_HEIGHT/2);
+    addActor(s);
+    
     return GWSTATUS_CONTINUE_GAME;
 }
 

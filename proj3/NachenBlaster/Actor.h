@@ -8,15 +8,23 @@ const int       HIT_BY_PROJECTILE = 1;
 
 const int       START_DIRECTION = 0;
 const int       DEPTH = 0;
+
 const int       PLAYER_START_Y = 128;
 const int       PLAYER_SIZE = 1.0;
 const int       PLAYER_HIT_POINTS = 50;
-const int       PLAYER_MOVE = 6;
+const int       PLAYER_SPEED = 6;
 const int       PLAYER_FULL_CABBAGE = 30;
+
 const int       CABBAGE_DAMAGE = 2;
 const int       CABBAGE_DELTA_X = 8;
 const int       ROTATE = 20;
 const double    PROJECTILE_SIZE = 0.5;
+
+const int       ALIEN_SIZE = 1.5;
+
+const double    SMALLGON_DAMAGE = 5;
+const double    SMALLGON_SPEED = 2.0;
+const int       SMALLGON_SCORE_VALUE = 250;
 
 class StudentWorld;
 
@@ -107,8 +115,8 @@ public:
     int numTorpedoes() const;
     
 private:
-    int     m_cabbagePoints;
-    int     m_torpedos;
+    int m_cabbagePoints;
+    int m_torpedos;
 };
 
 class Alien : public DamageableObject
@@ -117,6 +125,7 @@ public:
     Alien(StudentWorld* w, double startX, double startY, int imageID,
           double hitPoints, double damageAmt, double deltaX,
           double deltaY, double speed, unsigned int scoreValue);
+    
     virtual bool collidableWithPlayerFiredProjectile() const;
     virtual void sufferDamage(double amt, int cause);
     
@@ -130,12 +139,24 @@ public:
     // Set the player's speed.
     void setSpeed(double speed);
     
+    double getDeltaX();
+    
+    // get speed
+    double getDeltaY();
+    
     // If this alien collided with the player, damage the player and return
     // true; otherwise, return false.
     virtual bool damageCollidingPlayer(double amt);
     
     // If this alien drops goodies, drop one with the appropriate probability.
     virtual void possiblyDropGoodie();
+    
+private:
+    double          m_deltaX;
+    double          m_deltaY;
+    double          m_speed;
+    double          m_flight_plan;
+    unsigned int    m_scoreValue;
 };
 
 class Smallgon : public Alien

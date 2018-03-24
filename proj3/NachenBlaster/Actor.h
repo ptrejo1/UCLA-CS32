@@ -20,11 +20,18 @@ const int       CABBAGE_DELTA_X = 8;
 const int       ROTATE = 20;
 const double    PROJECTILE_SIZE = 0.5;
 
+const double    EXPLOSION_SIZE = 1.0;
+
 const int       ALIEN_SIZE = 1.5;
 
-const double    SMALLGON_DAMAGE = 5;
-const double    SMALLGON_SPEED = 2.0;
-const int       SMALLGON_SCORE_VALUE = 250;
+const double    ALIEN_DAMAGE = 5;
+const double    ALIEN_SPEED = 2.0;
+const int       ALIEN_SCORE_VALUE = 250;
+
+const double    SNAGGLEGON_DAMAGE = 15;
+const double    SNAGGLEGON_SPEED = 1.75;
+const int       SNAGGLEGON_SCORE_VALUE = 1000;
+
 
 class StudentWorld;
 
@@ -72,6 +79,9 @@ class Explosion : public Actor
 public:
     Explosion(StudentWorld* w, double startX, double startY);
     virtual void doSomething();
+    
+private:
+    int m_duration;
 };
 
 class DamageableObject : public Actor
@@ -137,12 +147,14 @@ public:
     void setDeltaY(double dy);
     
     // Set the player's speed.
-    void setSpeed(double speed);
+    void setDeltaX(double dx);
     
     double getDeltaX();
     
     // get speed
     double getDeltaY();
+    
+    void setFlightPlan(double length);
     
     // If this alien collided with the player, damage the player and return
     // true; otherwise, return false.

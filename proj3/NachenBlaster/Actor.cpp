@@ -43,9 +43,21 @@ void Star::doSomething()
     moveTo(getX()-1, getY());
 }
 
-/*
- Put Explosion here
-*/
+Explosion::Explosion(StudentWorld* w, double startX, double startY) : Actor(w, startX, startY, IID_EXPLOSION, START_DIRECTION, EXPLOSION_SIZE, DEPTH), m_duration(4)
+{
+}
+
+void Explosion::doSomething()
+{
+    if(m_duration == 0)
+    {
+        world()->playSound(SOUND_DEATH);
+        setDead();
+        return;
+    }
+    setSize(getSize()*1.5);
+    m_duration--;
+}
 
 DamageableObject::DamageableObject(StudentWorld* w, double startX, double startY, int imageID, int startDir, double size, int depth, double hitPoints) : Actor(w, startX, startY, imageID, startDir, size, depth), m_hitPoints(hitPoints)
 {
@@ -63,6 +75,13 @@ void DamageableObject::increaseHitPoints(double amt)
 
 void DamageableObject::sufferDamage(double amt, int cause)
 {
+    if (m_hitPoints - amt <= 0) {
+        world()->addActor(new Explosion(world(), getX(), getY()));
+        setDead();
+        world()->recordAlienDestroyed();
+        return;
+    }
+    world()->playSound(SOUND_BLAST);
     m_hitPoints -= amt;
 }
 
@@ -179,14 +198,23 @@ void Alien::move()
     if (m_flight_plan == 0)
     {
         m_flight_plan = randInt(1, 32);
+        
+        // randomly select new flight direction
+        int choice = randInt(1, 3);
+        switch (choice)
+        {
+            case 1: setDeltaY(0); break;
+            case 2: setDeltaY(m_speed); break;
+            case 3: setDeltaY(-1*m_speed); break;
+        }
     }
-    if (getY() >= VIEW_HEIGHT-1)
+    if (getY()+m_deltaY >= VIEW_HEIGHT-1)
     {
-        setDeltaY(-1*m_speed);
+        setDeltaY(-1*getDeltaY());
     }
-    if(getY() <= 0)
+    if(getY()+m_deltaY <= 0)
     {
-        setDeltaY(m_speed);
+        setDeltaY(-1*getDeltaY());
     }
     m_flight_plan--;
 }
@@ -196,9 +224,9 @@ void Alien::setDeltaY(double dy)
     m_deltaY = dy;
 }
 
-void Alien::setSpeed(double speed)
+void Alien::setDeltaX(double dx)
 {
-    m_speed = speed;
+    m_deltaX = dx;
 }
 
 double Alien::getDeltaX()
@@ -209,6 +237,11 @@ double Alien::getDeltaX()
 double Alien::getDeltaY()
 {
     return m_deltaY;
+}
+
+void Alien::setFlightPlan(double length)
+{
+    m_flight_plan = length;
 }
 
 // not real imp
@@ -223,13 +256,49 @@ void Alien::possiblyDropGoodie()
     
 }
 
-Smallgon::Smallgon(StudentWorld* w, double startX, double startY) : Alien(w, startX, startY, IID_SMALLGON, 5*(1+(w->getLevel()-1)*0.1), SMALLGON_DAMAGE, SMALLGON_SPEED, SMALLGON_SPEED, SMALLGON_SPEED, SMALLGON_SCORE_VALUE)
+Smallgon::Smallgon(StudentWorld* w, double startX, double startY) : Alien(w, startX, startY, IID_SMALLGON, 5*(1+(w->getLevel()-1)*0.1), ALIEN_DAMAGE, ALIEN_SPEED, ALIEN_SPEED, ALIEN_SPEED, ALIEN_SCORE_VALUE)
 {
 }
 
 void Smallgon::doSomething()
 {
     move();
+    moveTo(getX()-getDeltaX(), getY()+getDeltaY());
+}
+
+Smoregon::Smoregon(StudentWorld* w, double startX, double startY) : Alien(w, startX, startY, IID_SMOREGON, 5*(1+(w->getLevel()-1)*0.1), ALIEN_DAMAGE, ALIEN_SPEED, ALIEN_SPEED, ALIEN_SPEED, ALIEN_SCORE_VALUE)
+{
+}
+
+void Smoregon::doSomething()
+{
+    int choice = randInt(1, ((20/world()->getLevel())+5));
+    
+    move();
+    if (choice == 1)
+    {
+        setDeltaY(0);
+        setFlightPlan(VIEW_WIDTH);
+        setDeltaX(5);
+    }
+    moveTo(getX()-getDeltaX(), getY()+getDeltaY());
+}
+
+Snagglegon::Snagglegon(StudentWorld* w, double startX, double startY) : Alien(w, startX, startY, IID_SNAGGLEGON, 10*(1+(w->getLevel()-1)*0.1), SNAGGLEGON_DAMAGE, SNAGGLEGON_SPEED, -1*SNAGGLEGON_SPEED, SNAGGLEGON_SPEED, SNAGGLEGON_SCORE_VALUE)
+{
+}
+
+void Snagglegon::doSomething()
+{
+    
+    if (getY()+getDeltaY() >= VIEW_HEIGHT-1)
+    {
+        setDeltaY(-1*getDeltaY());
+    }
+    if(getY()+getDeltaY() <= 0)
+    {
+        setDeltaY(-1*getDeltaY());
+    }
     moveTo(getX()-getDeltaX(), getY()+getDeltaY());
 }
 
@@ -253,10 +322,20 @@ void Cabbage::doSomething()
 {
     if (!isDead())
     {
-        // TODO
+        Alien* a = dynamic_cast<Alien*>(world()->getOneCollidingAlien(this));
+        if (world()->getOneCollidingAlien(this) != nullptr) {
+            a->sufferDamage(CABBAGE_DAMAGE, HIT_BY_PROJECTILE);
+            setDead();
+        }
+        
         moveTo(getX()+CABBAGE_DELTA_X, getY());
         setDirection(getDirection()+ROTATE);
-        // TODO
+        
+        a = dynamic_cast<Alien*>(world()->getOneCollidingAlien(this));
+        if (world()->getOneCollidingAlien(this) != nullptr) {
+            a->sufferDamage(CABBAGE_DAMAGE, HIT_BY_PROJECTILE);
+            setDead();
+        }
     }
     else
         return;
@@ -274,10 +353,10 @@ void Cabbage::doSomething()
  TODO:
  
  ** Actor::collidableWithPlayerFiredProjectile
-    needs to be implmented for Alien
+    needs to be implemented for Alien
  
  ** Alien::damageCollidingPlayer
- needs to be implmented for Alien
+ needs to be implemented for Alien
  
  ** Alien::possiblyDropGoodie
  

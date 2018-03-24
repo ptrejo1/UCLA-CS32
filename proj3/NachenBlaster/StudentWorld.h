@@ -3,7 +3,7 @@
 
 #include "GameWorld.h"
 #include <string>
-#include <list>
+#include <vector>
 
 class Actor;
 class Player;
@@ -25,6 +25,8 @@ public:
     // otherwise, return a null pointer.
     Player* getCollidingPlayer(const Actor* a) const;
     
+    bool collided(const Actor* a, const Actor* b) const;
+    
     // Is the player in the line of fire of a, which might cause a to attack?
     bool playerInLineOfFire(const Actor* a) const;
     
@@ -37,12 +39,16 @@ public:
     // add stars as necessary
     void addStar();
     
+    // add aliens as necessary
+    void addAlien();
+    
     // delete dead actors
     void removeDead();
     
 private:
     std::vector<Actor*> actors;
     Player* m_player;
+    int m_aliens_destroyed;
 };
 
 #endif // STUDENTWORLD_H_

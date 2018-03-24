@@ -10,7 +10,7 @@ GameWorld* createStudentWorld(string assetDir)
 }
 
 StudentWorld::StudentWorld(string assetDir)
-: GameWorld(assetDir)
+: GameWorld(assetDir), m_aliens_destroyed(0)
 {
 }
 
@@ -30,10 +30,6 @@ int StudentWorld::init()
         Star* star = new Star(this, randInt(0, VIEW_WIDTH)-1, randInt(0, VIEW_HEIGHT-1));
         addActor(star);
     }
-    // smallgon
-    
-    Smallgon* s = new Smallgon(this, VIEW_WIDTH-1, VIEW_HEIGHT/2);
-    addActor(s);
     
     return GWSTATUS_CONTINUE_GAME;
 }
@@ -59,6 +55,8 @@ int StudentWorld::move()
     }
     addStar();
     
+    addAlien();
+    
     removeDead();
     
     // update display
@@ -78,10 +76,49 @@ void StudentWorld::cleanUp()
     }
     actors.clear();
 }
+// only called by player fired projectile
+// need to implement player collision
+Actor* StudentWorld::getOneCollidingAlien(const Actor *a) const
+{
+    vector<Actor*>::const_iterator it;
+    for (it = actors.begin(); it != actors.end(); it++)
+    {
+        if ((*it)->collidableWithPlayerFiredProjectile() && collided(a, *it))
+        {
+            return (*it);
+        }
+    }
+    
+    return nullptr;
+}
+
+Player* getCollidingPlayer(const Actor* a)
+{
+    
+    
+    
+    return nullptr;
+}
+
+bool StudentWorld::collided(const Actor *a, const Actor *b) const
+{
+    double distance = sqrt(pow((b->getX())-(a->getX()), 2.0)+pow((b->getY())-(a->getY()), 2.0));
+    double radii = 0.75*(a->getRadius()+a->getRadius());
+    
+    if (distance < radii) {
+        return true;
+    }
+    return false;
+}
 
 void StudentWorld::addActor(Actor *a)
 {
     actors.push_back(a);
+}
+
+void StudentWorld::recordAlienDestroyed()
+{
+    m_aliens_destroyed++;
 }
 
 void StudentWorld::addStar()
@@ -89,6 +126,42 @@ void StudentWorld::addStar()
     if (randInt(1, 15) == 1)
     {
         addActor(new Star(this, VIEW_WIDTH-1, randInt(0, VIEW_HEIGHT-1)));
+    }
+}
+
+void StudentWorld::addAlien()
+{
+    int T = 6+(4*this->getLevel());     // total ships per level
+    int M = 4+(0.5*this->getLevel());   // max aliens
+    
+    int aliens = 0;
+    vector<Actor*>::iterator it;
+    for (it = actors.begin(); it != actors.end(); it++)
+    {
+        if ((*it)->collidableWithPlayerFiredProjectile()) {
+            aliens++;
+        }
+    }
+    
+    if (aliens < min(M, T-m_aliens_destroyed))
+    {
+        int s1 = 60;
+        int s2 = 20+getLevel()*5;
+        int s3 = 5+getLevel()*5;
+        int choice  = randInt(1, s1+s2+s3);
+        
+        if (choice >= 1 && choice <= s1)
+        {
+            addActor(new Smallgon(this, VIEW_WIDTH-1, randInt(0, VIEW_HEIGHT-1)));
+        }
+        else if (choice >= s1+1 && choice <= s1+s2)
+        {
+            addActor(new Smoregon(this, VIEW_WIDTH-1, randInt(0, VIEW_HEIGHT-1)));
+        }
+        else if (choice >= s1+s2+1 && choice <= s1+s2+s3)
+        {
+            addActor(new Snagglegon(this, VIEW_WIDTH-1, randInt(0, VIEW_HEIGHT-1)));
+        }
     }
 }
 

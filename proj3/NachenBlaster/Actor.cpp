@@ -262,6 +262,13 @@ Smallgon::Smallgon(StudentWorld* w, double startX, double startY) : Alien(w, sta
 
 void Smallgon::doSomething()
 {
+    int choice = randInt(1, ((20/world()->getLevel())+5));
+    if (world()->playerInLineOfFire(this) && choice == 1)
+    {
+        world()->addActor(new Turnip(world(), getX()-14, getY()));
+        world()->playSound(SOUND_ALIEN_SHOOT);
+    }
+    
     move();
     moveTo(getX()-getDeltaX(), getY()+getDeltaY());
 }
@@ -339,6 +346,16 @@ void Cabbage::doSomething()
     }
     else
         return;
+}
+
+Turnip::Turnip(StudentWorld* w, double startX, double startY) : Projectile(w, startX, startY, IID_TURNIP, TURNIP_DAMAGE, TURNIP_DELTA_X, true, START_DIRECTION)
+{
+}
+
+void Turnip::doSomething()
+{
+    moveTo(getX()-CABBAGE_DELTA_X, getY());
+    setDirection(getDirection()+ROTATE);
 }
 
 /*

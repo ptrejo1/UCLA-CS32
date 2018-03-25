@@ -32,6 +32,8 @@ const double    SNAGGLEGON_DAMAGE = 15;
 const double    SNAGGLEGON_SPEED = 1.75;
 const int       SNAGGLEGON_SCORE_VALUE = 1000;
 
+const double       TURNIP_DAMAGE = 2;
+const double       TURNIP_DELTA_X = 6;
 
 class StudentWorld;
 

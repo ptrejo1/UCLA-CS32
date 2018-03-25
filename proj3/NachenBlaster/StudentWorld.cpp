@@ -51,7 +51,10 @@ int StudentWorld::move()
         //if player died return
         
         // if level completed return
-        
+        if(m_aliens_destroyed == 6+(4*this->getLevel()))
+        {
+            return GWSTATUS_FINISHED_LEVEL;
+        }
     }
     addStar();
     
@@ -106,6 +109,16 @@ bool StudentWorld::collided(const Actor *a, const Actor *b) const
     double radii = 0.75*(a->getRadius()+a->getRadius());
     
     if (distance < radii) {
+        return true;
+    }
+    return false;
+}
+
+// can pass this into function
+bool StudentWorld::playerInLineOfFire(const Actor *a) const
+{
+    if (m_player->getX() < a->getX() && abs(m_player->getY()-a->getY()) <= 4)
+    {
         return true;
     }
     return false;

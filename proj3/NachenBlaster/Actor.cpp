@@ -288,6 +288,11 @@ void Smoregon::doSomething()
         setFlightPlan(VIEW_WIDTH);
         setDeltaX(5);
     }
+    if (world()->playerInLineOfFire(this) && choice == 2)
+    {
+        world()->addActor(new Turnip(world(), getX()-14, getY()));
+        world()->playSound(SOUND_ALIEN_SHOOT);
+    }
     moveTo(getX()-getDeltaX(), getY()+getDeltaY());
 }
 
@@ -297,6 +302,12 @@ Snagglegon::Snagglegon(StudentWorld* w, double startX, double startY) : Alien(w,
 
 void Snagglegon::doSomething()
 {
+    int choice = randInt(1, ((15/world()->getLevel())+10));
+    if (world()->playerInLineOfFire(this) && choice == 1)
+    {
+        world()->addActor(new AlienLaunchedTorpedo(world(), getX()-14, getY()));
+        world()->playSound(SOUND_TORPEDO);
+    }
     
     if (getY()+getDeltaY() >= VIEW_HEIGHT-1)
     {
@@ -358,9 +369,25 @@ void Turnip::doSomething()
     setDirection(getDirection()+ROTATE);
 }
 
+Torpedo::Torpedo(StudentWorld* w, double startX, double startY, double deltaX, int imageDir) : Projectile(w, startX, startY, IID_TORPEDO, TORPEDO_DAMAGE, deltaX, false, imageDir)
+{
+}
+
+AlienLaunchedTorpedo::AlienLaunchedTorpedo(StudentWorld* w, double startX, double startY) : Torpedo(w, startX, startY, TORPEDO_DELTA_X, ALIEN_TORPEDO_DIRECTION)
+{
+}
+
+void AlienLaunchedTorpedo::doSomething()
+{
+    moveTo(getX()-CABBAGE_DELTA_X, getY());
+}
+
 /*
  
  Notes:
+ 
+ *** add is not dead check for aliens
+ 
  Actors always initialized to alive
  use setDead() to change this
  

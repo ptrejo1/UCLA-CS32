@@ -32,8 +32,12 @@ const double    SNAGGLEGON_DAMAGE = 15;
 const double    SNAGGLEGON_SPEED = 1.75;
 const int       SNAGGLEGON_SCORE_VALUE = 1000;
 
-const double       TURNIP_DAMAGE = 2;
-const double       TURNIP_DELTA_X = 6;
+const double    TURNIP_DAMAGE = 2;
+const double    TURNIP_DELTA_X = 6;
+
+const double    TORPEDO_DAMAGE = 8.0;
+const double    TORPEDO_DELTA_X = 8.0;
+const int       ALIEN_TORPEDO_DIRECTION = 180;
 
 class StudentWorld;
 
@@ -218,8 +222,7 @@ public:
 class Torpedo : public Projectile
 {
 public:
-    Torpedo(StudentWorld* w, double startX, double startY, double deltaX,
-            int imageDir);
+    Torpedo(StudentWorld* w, double startX, double startY, double deltaX, int imageDir);
 };
 
 class PlayerLaunchedTorpedo : public Torpedo

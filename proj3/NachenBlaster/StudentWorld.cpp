@@ -2,6 +2,10 @@
 #include "GameConstants.h"
 #include "Actor.h"
 #include <string>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+
 using namespace std;
 
 GameWorld* createStudentWorld(string assetDir)
@@ -10,7 +14,7 @@ GameWorld* createStudentWorld(string assetDir)
 }
 
 StudentWorld::StudentWorld(string assetDir)
-: GameWorld(assetDir), m_aliens_destroyed(0)
+: GameWorld(assetDir)
 {
 }
 
@@ -21,6 +25,8 @@ StudentWorld::~StudentWorld()
 
 int StudentWorld::init()
 {
+    m_aliens_destroyed = 0;
+    
     // add Player
     m_player = new Player(this);
     
@@ -36,23 +42,33 @@ int StudentWorld::init()
 
 int StudentWorld::move()
 {
+    if (!m_player->isDead())
+    {
+        m_player->doSomething();
+    }
+    
+    // give actors a chance to do something
     vector<Actor*>:: iterator it;
     for (it = actors.begin(); it != actors.end(); it++)
     {
-        if (!m_player->isDead())
-        {
-            m_player->doSomething();
-        }
         if (!(*it)->isDead())
         {
             (*it)->doSomething();
         }
         
-        //if player died return
+        // if player died end level
+        if (m_player->isDead())
+        {
+            decLives();
+            delete m_player;
+            return GWSTATUS_PLAYER_DIED;
+        }
         
         // if level completed return
         if(m_aliens_destroyed == 6+(4*this->getLevel()))
         {
+            m_aliens_destroyed = 0;
+            delete m_player;
             return GWSTATUS_FINISHED_LEVEL;
         }
     }
@@ -63,6 +79,10 @@ int StudentWorld::move()
     removeDead();
     
     // update display
+    ostringstream oss;
+    oss.setf(ios::fixed);
+    oss << "Lives:" << setw(2) << getLives() << setw(10) << "Health: " << setw(3) << m_player->healthPct() << "%" << setw(8) << "Score:" << setw(6) << getScore() << setw(8) << "Level:" << setw(2) << getLevel() << setw(11) << "Cabbages:" << setw(4) << m_player->cabbagePct() << "%" << setw(11) << "Torpedos:" << setw(2) << m_player->numTorpedoes();
+    setGameStatText(oss.str());
     
     //decLives();
     return GWSTATUS_CONTINUE_GAME;
@@ -70,8 +90,6 @@ int StudentWorld::move()
 
 void StudentWorld::cleanUp()
 {
-    delete m_player;
-    
     vector<Actor*>::iterator it;
     for (it = actors.begin(); it != actors.end(); it++)
     {
@@ -79,8 +97,7 @@ void StudentWorld::cleanUp()
     }
     actors.clear();
 }
-// only called by player fired projectile
-// need to implement player collision
+
 Actor* StudentWorld::getOneCollidingAlien(const Actor *a) const
 {
     vector<Actor*>::const_iterator it;
@@ -95,16 +112,19 @@ Actor* StudentWorld::getOneCollidingAlien(const Actor *a) const
     return nullptr;
 }
 
-Player* getCollidingPlayer(const Actor* a)
+Player* StudentWorld::getCollidingPlayer(const Actor* a) const
 {
-    
-    
+    if (collided(a, m_player))
+    {
+        return m_player;
+    }
     
     return nullptr;
 }
 
 bool StudentWorld::collided(const Actor *a, const Actor *b) const
 {
+    // calculate distance and radii
     double distance = sqrt(pow((b->getX())-(a->getX()), 2.0)+pow((b->getY())-(a->getY()), 2.0));
     double radii = 0.75*(a->getRadius()+a->getRadius());
     
@@ -114,7 +134,6 @@ bool StudentWorld::collided(const Actor *a, const Actor *b) const
     return false;
 }
 
-// can pass this into function
 bool StudentWorld::playerInLineOfFire(const Actor *a) const
 {
     if (m_player->getX() < a->getX() && abs(m_player->getY()-a->getY()) <= 4)
@@ -147,15 +166,18 @@ void StudentWorld::addAlien()
     int T = 6+(4*this->getLevel());     // total ships per level
     int M = 4+(0.5*this->getLevel());   // max aliens
     
+    // count aliens on screen
     int aliens = 0;
     vector<Actor*>::iterator it;
     for (it = actors.begin(); it != actors.end(); it++)
     {
-        if ((*it)->collidableWithPlayerFiredProjectile()) {
+        if ((*it)->collidableWithPlayerFiredProjectile())
+        {
             aliens++;
         }
     }
     
+    // add alien according to proability
     if (aliens < min(M, T-m_aliens_destroyed))
     {
         int s1 = 60;
@@ -195,32 +217,7 @@ void StudentWorld::removeDead()
     }
 }
 
-/*
- 
- ** Player is not in actors list **
- 
- i. Add any private data members to this class required to keep track of Stars as well as the NachenBlaster object. You may ignore all other items in the game such as Smallgons, projectiles, goodies, etc. for Part #1.
- 
- ii. Implement a constructor for this class that initializes your data
- members.
- 
- iii. Implement a destructor for this class that frees any remaining
- dynamically allocated data, if any, that has not yet been freed at the
- time the StudentWorld object is about to destroyed.
- 
- iv. Implement the init() method in this class. It must create the
- NachenBlaster and insert it into the space field at the proper starting location, as detailed in the spec above. It must also create all of the Stars and add them to the space field as specified in the spec above.
- 
- v. Implement the move() method in your StudentWorld class. During
- each tick, it must ask your NachenBlaster and Stars to do something.
- Your move() method need not check to see if the NachenBlaster has
- died or not; you may assume for Part #1 that the NachenBlaster cannot
- die. Your move() method does not have to deal with any actors other
- than the NachenBlaster and the Stars. During each tick, the move()
- method may also need to introduce new stars onto the far right side of
- the screen, as detailed in the spec above.
- 
- vi. Implement a cleanup() method that frees any dynamically allocated
- data that was allocated during calls to the init() method or the move() method (i.e., it should delete all your allocated Stars and the NachenBlaster). Note: Your StudentWorld class must have both a destructor and the cleanUp() method even though they likely do the same thing (in which case the destructor could just call cleanup()).
- 
-*/
+Player* StudentWorld::getPlayer() const
+{
+    return m_player;
+}

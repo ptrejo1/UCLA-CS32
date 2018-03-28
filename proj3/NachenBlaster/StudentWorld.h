@@ -25,6 +25,7 @@ public:
     // otherwise, return a null pointer.
     Player* getCollidingPlayer(const Actor* a) const;
     
+    // Determine collisions
     bool collided(const Actor* a, const Actor* b) const;
     
     // Is the player in the line of fire of a, which might cause a to attack?
@@ -44,6 +45,9 @@ public:
     
     // delete dead actors
     void removeDead();
+    
+    // get Player
+    Player* getPlayer() const;
     
 private:
     std::vector<Actor*> actors;

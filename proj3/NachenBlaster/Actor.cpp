@@ -28,6 +28,7 @@ void Actor::setDead()
 
 void Actor::moveTo(double x, double y)
 {
+    // if within bounds move otherwise set actor to dead
     if (x < VIEW_WIDTH && x >= 0 && y < VIEW_HEIGHT && y >= 0)
         GraphObject::moveTo(x, y);
     else
@@ -49,6 +50,8 @@ Explosion::Explosion(StudentWorld* w, double startX, double startY) : Actor(w, s
 
 void Explosion::doSomething()
 {
+    // once explosion has been alive for 4 ticks
+    // play sound and set to dead
     if(m_duration == 0)
     {
         world()->playSound(SOUND_DEATH);
@@ -75,26 +78,15 @@ void DamageableObject::increaseHitPoints(double amt)
 
 void DamageableObject::sufferDamage(double amt, int cause)
 {
-    if (m_hitPoints - amt <= 0) {
-        world()->addActor(new Explosion(world(), getX(), getY()));
-        setDead();
-        world()->recordAlienDestroyed();
-        return;
-    }
-    world()->playSound(SOUND_BLAST);
     m_hitPoints -= amt;
 }
 
-Player::Player(StudentWorld* w) : DamageableObject(w, 0, PLAYER_START_Y, IID_NACHENBLASTER, START_DIRECTION, PLAYER_SIZE, DEPTH, PLAYER_HIT_POINTS), m_cabbagePoints(PLAYER_FULL_CABBAGE)
+Player::Player(StudentWorld* w) : DamageableObject(w, 0, PLAYER_START_Y, IID_NACHENBLASTER, START_DIRECTION, PLAYER_SIZE, DEPTH, PLAYER_HIT_POINTS), m_cabbagePoints(PLAYER_FULL_CABBAGE), m_torpedos(0)
 {
 }
 
-// TODO
-// Implement Collisions
-// Probably Done in StudentWorld
 void Player::doSomething()
 {
-    
     if (!isDead())
     {
         int ch;
@@ -105,57 +97,91 @@ void Player::doSomething()
                 case KEY_PRESS_UP:
                 {
                     moveTo(getX(), getY()+PLAYER_SPEED);
-                    // collided();
                     break;
                 }
                 case KEY_PRESS_DOWN:
                 {
                     moveTo(getX(), getY()-PLAYER_SPEED);
-                    // collided();
                     break;
                 }
                 case KEY_PRESS_LEFT:
                 {
                     moveTo(getX()-PLAYER_SPEED, getY());
-                    // collided();
                     break;
                 }
                 case KEY_PRESS_RIGHT:
                 {
                     moveTo(getX()+PLAYER_SPEED, getY());
-                    // collided();
                     break;
                 }
                 case KEY_PRESS_SPACE:
                 {
-                    world()->addActor(new Cabbage(world(), getX()+12, getY()));
-                    world()->playSound(SOUND_PLAYER_SHOOT);
+                    // if enough cabbage points fire
+                    if (m_cabbagePoints >= 5)
+                    {
+                        world()->addActor(new Cabbage(world(), getX()+12, getY()));
+                        world()->playSound(SOUND_PLAYER_SHOOT);
+                        m_cabbagePoints -= 5;
+                    }
                     break;
                 }
                 case KEY_PRESS_TAB:
                 {
-                    // TODO shoot torpedo
-                    break;
+                    // if enough torpedos fire
+                    if (m_torpedos > 0)
+                    {
+                        world()->addActor(new PlayerLaunchedTorpedo(world(), getX()+12, getY()));
+                        world()->playSound(SOUND_TORPEDO);
+                        m_torpedos--;
+                        break;
+                    }
                 }
             }
         }
-        if (m_cabbagePoints < PLAYER_FULL_CABBAGE) {
+        // add to cabbage points each tick
+        if (m_cabbagePoints < PLAYER_FULL_CABBAGE)
+        {
             m_cabbagePoints++;
         }
     }
-    else
-        return;
-
 }
 
 void Player::increaseHitPoints(double amt)
 {
+    // dont allow more than allowed hit points
+    if (hitPoints()+amt > PLAYER_HIT_POINTS) {
+        DamageableObject::increaseHitPoints(PLAYER_HIT_POINTS-hitPoints());
+        return;
+    }
     DamageableObject::increaseHitPoints(amt);
 }
 
 void Player::sufferDamage(double amt, int cause)
 {
-    DamageableObject::sufferDamage(amt, cause);
+    // hit by projectile
+    if (cause)
+    {
+        // projectile killed player
+        if (hitPoints()-amt <= 0)
+        {
+            world()->addActor(new Explosion(world(), getX(), getY()));
+            setDead();
+            return;
+        }
+        world()->playSound(SOUND_BLAST);
+        DamageableObject::sufferDamage(amt, cause);
+    }
+    // hit by alien
+    else
+    {
+        if (hitPoints()-amt <= 0)
+        {
+            world()->addActor(new Explosion(world(), getX(), getY()));
+            setDead();
+            return;
+        }
+        DamageableObject::sufferDamage(amt, cause);
+    }
 }
 
 void Player::moveTo(double x, double y)
@@ -176,7 +202,12 @@ int Player::healthPct() const
 
 int Player::cabbagePct() const
 {
-    return static_cast<int>((m_cabbagePoints/PLAYER_FULL_CABBAGE)*100);
+    return static_cast<int>((m_cabbagePoints/PLAYER_FULL_CABBAGE)*100.0);
+}
+
+int Player::numTorpedoes() const
+{
+    return m_torpedos;
 }
 
 Alien::Alien(StudentWorld* w, double startX, double startY, int imageID, double hitPoints, double damageAmt, double deltaX, double deltaY, double speed, unsigned int scoreValue) : DamageableObject(w, startX, startY, imageID, START_DIRECTION, ALIEN_SIZE, DEPTH+1, hitPoints), m_deltaX(deltaX), m_deltaY(deltaY), m_speed(speed), m_scoreValue(scoreValue), m_flight_plan(0)
@@ -188,13 +219,36 @@ bool Alien::collidableWithPlayerFiredProjectile() const
     return true;
 }
 
-void Alien::sufferDamage(double amt, int cause)
+void Alien::sufferDamage(double amt, int cause, int score)
 {
-    DamageableObject::sufferDamage(amt, cause);
+    // hit by projectile
+    if (cause) {
+        // projectile caused death
+        if (hitPoints() - amt <= 0)
+        {
+            world()->addActor(new Explosion(world(), getX(), getY()));
+            setDead();
+            world()->recordAlienDestroyed();
+            possiblyDropGoodie();
+            world()->increaseScore(score);
+            return;
+        }
+        world()->playSound(SOUND_BLAST);
+        DamageableObject::sufferDamage(amt, cause);
+    }
+    // hit by player
+    else
+    {
+        world()->addActor(new Explosion(world(), getX(), getY()));
+        setDead();
+        world()->recordAlienDestroyed();
+        possiblyDropGoodie();
+    }
 }
 
 void Alien::move()
 {
+    // decide if new flight plan is needed
     if (m_flight_plan == 0)
     {
         m_flight_plan = randInt(1, 32);
@@ -208,6 +262,8 @@ void Alien::move()
             case 3: setDeltaY(-1*m_speed); break;
         }
     }
+    
+    // dont fly out of bounds
     if (getY()+m_deltaY >= VIEW_HEIGHT-1)
     {
         setDeltaY(-1*getDeltaY());
@@ -216,6 +272,8 @@ void Alien::move()
     {
         setDeltaY(-1*getDeltaY());
     }
+    
+    // reduce flight plan
     m_flight_plan--;
 }
 
@@ -244,16 +302,38 @@ void Alien::setFlightPlan(double length)
     m_flight_plan = length;
 }
 
-// not real imp
-bool Alien::damageCollidingPlayer(double amt)
+bool Alien::damageCollidingPlayer(double amt, int scoreValue)
 {
-    return true;
+    Player* p = world()->getCollidingPlayer(this);
+    if (p != nullptr)
+    {
+        p->sufferDamage(amt, HIT_BY_SHIP);
+        world()->increaseScore(scoreValue);
+        sufferDamage(0, HIT_BY_SHIP, 0);
+        return true;
+    }
+    
+    return false;
 }
 
-// not real imp
 void Alien::possiblyDropGoodie()
 {
-    
+}
+
+bool Alien::shoot(int choice)
+{
+    if (world()->playerInLineOfFire(this) && choice == 2)
+    {
+        world()->addActor(new Turnip(world(), getX()-14, getY()));
+        world()->playSound(SOUND_ALIEN_SHOOT);
+        return true;
+    }
+    return false;
+}
+
+unsigned int Alien::getScoreValue()
+{
+    return m_scoreValue;
 }
 
 Smallgon::Smallgon(StudentWorld* w, double startX, double startY) : Alien(w, startX, startY, IID_SMALLGON, 5*(1+(w->getLevel()-1)*0.1), ALIEN_DAMAGE, ALIEN_SPEED, ALIEN_SPEED, ALIEN_SPEED, ALIEN_SCORE_VALUE)
@@ -262,15 +342,27 @@ Smallgon::Smallgon(StudentWorld* w, double startX, double startY) : Alien(w, sta
 
 void Smallgon::doSomething()
 {
-    int choice = randInt(1, ((20/world()->getLevel())+5));
-    if (world()->playerInLineOfFire(this) && choice == 1)
-    {
-        world()->addActor(new Turnip(world(), getX()-14, getY()));
-        world()->playSound(SOUND_ALIEN_SHOOT);
+    if (!isDead()) {
+        
+        // check if collided with player
+        if (damageCollidingPlayer(ALIEN_DAMAGE, ALIEN_SCORE_VALUE))
+        {
+            return;
+        }
+        
+        // flight plan
+        move();
+        
+        // shoot
+        int choice = randInt(1, ((20/world()->getLevel())+5));
+        if(shoot(choice))
+        {
+            return;
+        }
+        
+        // move alien
+        moveTo(getX()-getDeltaX(), getY()+getDeltaY());
     }
-    
-    move();
-    moveTo(getX()-getDeltaX(), getY()+getDeltaY());
 }
 
 Smoregon::Smoregon(StudentWorld* w, double startX, double startY) : Alien(w, startX, startY, IID_SMOREGON, 5*(1+(w->getLevel()-1)*0.1), ALIEN_DAMAGE, ALIEN_SPEED, ALIEN_SPEED, ALIEN_SPEED, ALIEN_SCORE_VALUE)
@@ -279,21 +371,53 @@ Smoregon::Smoregon(StudentWorld* w, double startX, double startY) : Alien(w, sta
 
 void Smoregon::doSomething()
 {
-    int choice = randInt(1, ((20/world()->getLevel())+5));
-    
-    move();
-    if (choice == 1)
+    if (!isDead())
     {
-        setDeltaY(0);
-        setFlightPlan(VIEW_WIDTH);
-        setDeltaX(5);
+        int choice = randInt(1, ((20/world()->getLevel())+5));
+        
+        // check if collided with player
+        if (damageCollidingPlayer(ALIEN_DAMAGE, ALIEN_SCORE_VALUE))
+        {
+            return;
+        }
+        
+        // update flight plan
+        move();
+        
+        // apply ramming speed
+        if (choice == 1)
+        {
+            setDeltaY(0);
+            setFlightPlan(VIEW_WIDTH);
+            setDeltaX(5);
+        }
+        
+        // shoot
+        if(shoot(choice))
+        {
+            return;
+        }
+        
+        // move alien
+        moveTo(getX()-getDeltaX(), getY()+getDeltaY());
     }
-    if (world()->playerInLineOfFire(this) && choice == 2)
+}
+
+void Smoregon::possiblyDropGoodie()
+{
+    // drop with 1/3 chance
+    int goodie = randInt(1, 3);
+    if (goodie == 1)
     {
-        world()->addActor(new Turnip(world(), getX()-14, getY()));
-        world()->playSound(SOUND_ALIEN_SHOOT);
+        int drop = randInt(1, 2);
+        // repair goodie w/ 1/2 chance
+        if (drop == 1)
+        {
+            world()->addActor(new RepairGoodie(world(), getX(), getY()));
+            return;
+        }
+        world()->addActor(new TorpedoGoodie(world(), getX(), getY()));
     }
-    moveTo(getX()-getDeltaX(), getY()+getDeltaY());
 }
 
 Snagglegon::Snagglegon(StudentWorld* w, double startX, double startY) : Alien(w, startX, startY, IID_SNAGGLEGON, 10*(1+(w->getLevel()-1)*0.1), SNAGGLEGON_DAMAGE, SNAGGLEGON_SPEED, -1*SNAGGLEGON_SPEED, SNAGGLEGON_SPEED, SNAGGLEGON_SCORE_VALUE)
@@ -302,22 +426,56 @@ Snagglegon::Snagglegon(StudentWorld* w, double startX, double startY) : Alien(w,
 
 void Snagglegon::doSomething()
 {
-    int choice = randInt(1, ((15/world()->getLevel())+10));
-    if (world()->playerInLineOfFire(this) && choice == 1)
+    if (!isDead())
+    {
+        int choice = randInt(1, ((15/world()->getLevel())+10));
+        
+        // collided w/ player
+        if (damageCollidingPlayer(ALIEN_DAMAGE*3, SNAGGLEGON_SCORE_VALUE))
+        {
+            return;
+        }
+        
+        // shoot
+        if(shoot(choice))
+        {
+            return;
+        }
+        
+        // adjust flight plan if going out of bounds
+        if (getY()+getDeltaY() >= VIEW_HEIGHT-1)
+        {
+            setDeltaY(-1*getDeltaY());
+        }
+        if(getY()+getDeltaY() <= 0)
+        {
+            setDeltaY(-1*getDeltaY());
+        }
+        
+        // move alien
+        moveTo(getX()-getDeltaX(), getY()+getDeltaY());
+    }
+}
+
+void Snagglegon::possiblyDropGoodie()
+{
+    // drop life w/ 1/6 chance
+    int goodie = randInt(1, 6);
+    if (goodie == 1)
+    {
+        world()->addActor(new ExtraLifeGoodie(world(), getX(), getY()));
+    }
+}
+
+bool Snagglegon::shoot(int choice)
+{
+    if (world()->playerInLineOfFire(this) && choice == 2)
     {
         world()->addActor(new AlienLaunchedTorpedo(world(), getX()-14, getY()));
         world()->playSound(SOUND_TORPEDO);
+        return true;
     }
-    
-    if (getY()+getDeltaY() >= VIEW_HEIGHT-1)
-    {
-        setDeltaY(-1*getDeltaY());
-    }
-    if(getY()+getDeltaY() <= 0)
-    {
-        setDeltaY(-1*getDeltaY());
-    }
-    moveTo(getX()-getDeltaX(), getY()+getDeltaY());
+    return false;
 }
 
 Projectile::Projectile(StudentWorld* w, double startX, double startY, int imageID, double damageAmt, double deltaX, bool rotates, int imageDir) : Actor(w, startX, startY, imageID, imageDir, PROJECTILE_SIZE, DEPTH+1)
@@ -332,6 +490,30 @@ void Projectile::moveTo(double x, double y)
         setDead();
 }
 
+bool Projectile::alienCollidedWithProj(int damage)
+{
+    Alien* a = dynamic_cast<Alien*>(world()->getOneCollidingAlien(this));
+    if (a != nullptr)
+    {
+        a->sufferDamage(damage, HIT_BY_PROJECTILE, a->getScoreValue());
+        setDead();
+        return true;
+    }
+    return false;
+}
+
+bool Projectile::playerCollidedWithProj(int damage)
+{
+    Player* p = world()->getCollidingPlayer(this);
+    if (p != nullptr)
+    {
+        p->sufferDamage(damage, HIT_BY_PROJECTILE);
+        setDead();
+        return true;
+    }
+    return false;
+}
+
 Cabbage::Cabbage(StudentWorld* w, double startX, double startY) : Projectile(w, startX, startY, IID_CABBAGE, CABBAGE_DAMAGE, CABBAGE_DELTA_X, true, START_DIRECTION)
 {
 }
@@ -340,23 +522,22 @@ void Cabbage::doSomething()
 {
     if (!isDead())
     {
-        Alien* a = dynamic_cast<Alien*>(world()->getOneCollidingAlien(this));
-        if (world()->getOneCollidingAlien(this) != nullptr) {
-            a->sufferDamage(CABBAGE_DAMAGE, HIT_BY_PROJECTILE);
-            setDead();
+        // check if collided
+        if (alienCollidedWithProj(CABBAGE_DAMAGE))
+        {
+            return;
         }
         
+        // move cabbage
         moveTo(getX()+CABBAGE_DELTA_X, getY());
         setDirection(getDirection()+ROTATE);
         
-        a = dynamic_cast<Alien*>(world()->getOneCollidingAlien(this));
-        if (world()->getOneCollidingAlien(this) != nullptr) {
-            a->sufferDamage(CABBAGE_DAMAGE, HIT_BY_PROJECTILE);
-            setDead();
+        // check if collided
+        if (alienCollidedWithProj(CABBAGE_DAMAGE))
+        {
+            return;
         }
     }
-    else
-        return;
 }
 
 Turnip::Turnip(StudentWorld* w, double startX, double startY) : Projectile(w, startX, startY, IID_TURNIP, TURNIP_DAMAGE, TURNIP_DELTA_X, true, START_DIRECTION)
@@ -365,12 +546,53 @@ Turnip::Turnip(StudentWorld* w, double startX, double startY) : Projectile(w, st
 
 void Turnip::doSomething()
 {
-    moveTo(getX()-CABBAGE_DELTA_X, getY());
-    setDirection(getDirection()+ROTATE);
+    if (!isDead())
+    {
+        // check if collided
+        if (playerCollidedWithProj(TURNIP_DAMAGE))
+        {
+            return;
+        }
+        
+        // move turnip
+        moveTo(getX()-CABBAGE_DELTA_X, getY());
+        setDirection(getDirection()+ROTATE);
+        
+        // check if collided
+        if (playerCollidedWithProj(TURNIP_DAMAGE))
+        {
+            return;
+        }
+    }
 }
 
 Torpedo::Torpedo(StudentWorld* w, double startX, double startY, double deltaX, int imageDir) : Projectile(w, startX, startY, IID_TORPEDO, TORPEDO_DAMAGE, deltaX, false, imageDir)
 {
+}
+
+PlayerLaunchedTorpedo::PlayerLaunchedTorpedo(StudentWorld* w, double startX, double startY) : Torpedo(w, startX, startY, TORPEDO_DELTA_X, START_DIRECTION)
+{
+}
+
+void PlayerLaunchedTorpedo::doSomething()
+{
+    if (!isDead())
+    {
+        // check if collided
+        if (alienCollidedWithProj(TORPEDO_DAMAGE))
+        {
+            return;
+        }
+        
+        // move torpedo
+        moveTo(getX()+TORPEDO_DELTA_X, getY());
+        
+        // check if collided
+        if (alienCollidedWithProj(TORPEDO_DAMAGE))
+        {
+            return;
+        }
+    }
 }
 
 AlienLaunchedTorpedo::AlienLaunchedTorpedo(StudentWorld* w, double startX, double startY) : Torpedo(w, startX, startY, TORPEDO_DELTA_X, ALIEN_TORPEDO_DIRECTION)
@@ -379,37 +601,143 @@ AlienLaunchedTorpedo::AlienLaunchedTorpedo(StudentWorld* w, double startX, doubl
 
 void AlienLaunchedTorpedo::doSomething()
 {
-    moveTo(getX()-CABBAGE_DELTA_X, getY());
+    if (!isDead())
+    {
+        // check if collided
+        if (playerCollidedWithProj(TORPEDO_DAMAGE))
+        {
+            return;
+        }
+        
+        // move torpedo
+        moveTo(getX()-CABBAGE_DELTA_X, getY());
+        
+        // check if collided
+        if (playerCollidedWithProj(TORPEDO_DAMAGE))
+        {
+            return;
+        }
+    }
 }
 
-/*
- 
- Notes:
- 
- *** add is not dead check for aliens
- 
- Actors always initialized to alive
- use setDead() to change this
- 
- Actor moveTo() method will check if its
- on the the screen before calling GraphObject moveTo
- 
- TODO:
- 
- ** Actor::collidableWithPlayerFiredProjectile
-    needs to be implemented for Alien
- 
- ** Alien::damageCollidingPlayer
- needs to be implemented for Alien
- 
- ** Alien::possiblyDropGoodie
- 
- 
- ** rememeber to override sufferDamage
- (this is kinda weird)
- 
- ** Alien::damageCollidingPlayer
- 
- ** Alien::possiblyDropGoodie
- 
-*/
+Goodie::Goodie(StudentWorld* w, double startX, double startY, int imageID) : Actor(w, startX, startY, imageID, START_DIRECTION, GOODIE_SIZE, DEPTH+1)
+{
+}
+
+bool Goodie::helpCollidingPlayer()
+{
+    Player* p = world()->getCollidingPlayer(this);
+    if (p != nullptr)
+    {
+        world()->increaseScore(GOODIE_POINTS);
+        world()->playSound(SOUND_GOODIE);
+        setDead();
+        return true;
+    }
+    return false;
+}
+
+ExtraLifeGoodie::ExtraLifeGoodie(StudentWorld* w, double startX, double startY) : Goodie(w, startX, startY, IID_LIFE_GOODIE)
+{
+}
+
+void ExtraLifeGoodie::doSomething()
+{
+    if (!isDead())
+    {
+        // check if collided
+        if (helpCollidingPlayer())
+        {
+            return;
+        }
+        
+        // move goodie
+        moveTo(getX()-GOODIE_SPEED, getY()-GOODIE_SPEED);
+        
+        // check if collided
+        if (helpCollidingPlayer())
+        {
+            return;
+        }
+    }
+}
+
+bool ExtraLifeGoodie::helpCollidingPlayer()
+{
+    if (Goodie::helpCollidingPlayer())
+    {
+        world()->incLives();
+        return true;
+    }
+    return false;
+}
+
+RepairGoodie::RepairGoodie(StudentWorld* w, double startX, double startY) : Goodie(w, startX, startY, IID_REPAIR_GOODIE)
+{
+}
+
+void RepairGoodie::doSomething()
+{
+    if (!isDead())
+    {
+        // check if collided
+        if (helpCollidingPlayer())
+        {
+            return;
+        }
+        
+        // move goodie
+        moveTo(getX()-GOODIE_SPEED, getY()-GOODIE_SPEED);
+        
+        // check if collided
+        if (helpCollidingPlayer())
+        {
+            return;
+        }
+    }
+}
+
+bool RepairGoodie::helpCollidingPlayer()
+{
+    if (Goodie::helpCollidingPlayer())
+    {
+        world()->getPlayer()->increaseHitPoints(10);
+        return true;
+    }
+    return false;
+}
+
+TorpedoGoodie::TorpedoGoodie(StudentWorld* w, double startX, double startY) : Goodie(w, startX, startY, IID_TORPEDO_GOODIE)
+{
+}
+
+void TorpedoGoodie::doSomething()
+{
+    if (!isDead())
+    {
+        // check if collided
+        if (helpCollidingPlayer())
+        {
+            return;
+        }
+        
+        // move goodie
+        moveTo(getX()-GOODIE_SPEED, getY()-GOODIE_SPEED);
+        
+        // check if collided
+        if (helpCollidingPlayer())
+        {
+            return;
+        }
+    }
+}
+
+bool TorpedoGoodie::helpCollidingPlayer()
+{
+    if (Goodie::helpCollidingPlayer())
+    {
+        world()->getPlayer()->increaseTorpedoes(5);
+        return true;
+    }
+    return false;
+}

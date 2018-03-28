@@ -13,7 +13,7 @@ const int       PLAYER_START_Y = 128;
 const int       PLAYER_SIZE = 1.0;
 const int       PLAYER_HIT_POINTS = 50;
 const int       PLAYER_SPEED = 6;
-const int       PLAYER_FULL_CABBAGE = 30;
+const double    PLAYER_FULL_CABBAGE = 30.0;
 
 const int       CABBAGE_DAMAGE = 2;
 const int       CABBAGE_DELTA_X = 8;
@@ -38,6 +38,10 @@ const double    TURNIP_DELTA_X = 6;
 const double    TORPEDO_DAMAGE = 8.0;
 const double    TORPEDO_DELTA_X = 8.0;
 const int       ALIEN_TORPEDO_DIRECTION = 180;
+
+const double    GOODIE_SIZE = 0.5;
+const int       GOODIE_POINTS = 100;
+const double    GOODIE_SPEED = 0.75;
 
 class StudentWorld;
 
@@ -131,7 +135,7 @@ public:
     int numTorpedoes() const;
     
 private:
-    int m_cabbagePoints;
+    double m_cabbagePoints;
     int m_torpedos;
 };
 
@@ -143,7 +147,7 @@ public:
           double deltaY, double speed, unsigned int scoreValue);
     
     virtual bool collidableWithPlayerFiredProjectile() const;
-    virtual void sufferDamage(double amt, int cause);
+    virtual void sufferDamage(double amt, int cause, int score);
     
     // Move the player by the current speed in the direction indicated
     // by the x and y deltas.
@@ -164,10 +168,16 @@ public:
     
     // If this alien collided with the player, damage the player and return
     // true; otherwise, return false.
-    virtual bool damageCollidingPlayer(double amt);
+    virtual bool damageCollidingPlayer(double amt, int scoreValue);
     
     // If this alien drops goodies, drop one with the appropriate probability.
     virtual void possiblyDropGoodie();
+    
+    // detemine if alien will shoot
+    virtual bool shoot(int choice);
+    
+    // get alien score value
+    unsigned int getScoreValue();
     
 private:
     double          m_deltaX;
@@ -189,6 +199,7 @@ class Smoregon : public Alien
 public:
     Smoregon(StudentWorld* w, double startX, double startY);
     virtual void doSomething();
+    virtual void possiblyDropGoodie();
 };
 
 class Snagglegon : public Alien
@@ -196,6 +207,8 @@ class Snagglegon : public Alien
 public:
     Snagglegon(StudentWorld* w, double startX, double startY);
     virtual void doSomething();
+    virtual void possiblyDropGoodie();
+    virtual bool shoot(int choice);
 };
 
 class Projectile : public Actor
@@ -203,6 +216,14 @@ class Projectile : public Actor
 public:
     Projectile(StudentWorld* w, double startX, double startY, int imageID, double damageAmt, double deltaX, bool rotates, int imageDir);
     virtual void moveTo(double x, double y);
+    
+    // if alien was hit by projectile return true apply damage
+    // otherwise false
+    bool alienCollidedWithProj(int damage);
+    
+    // if player was hit by projectile return true apply damage
+    // otherwise false
+    bool playerCollidedWithProj(int damage);
 };
 
 class Cabbage : public Projectile
@@ -243,6 +264,10 @@ class Goodie : public Actor
 {
 public:
     Goodie(StudentWorld* w, double startX, double startY, int imageID);
+    
+    // if player collided with goodie return true and apply goodie
+    // otherswise false
+    virtual bool helpCollidingPlayer();
 };
 
 class ExtraLifeGoodie : public Goodie
@@ -250,6 +275,7 @@ class ExtraLifeGoodie : public Goodie
 public:
     ExtraLifeGoodie(StudentWorld* w, double startX, double startY);
     virtual void doSomething();
+    virtual bool helpCollidingPlayer();
 };
 
 class RepairGoodie : public Goodie
@@ -257,6 +283,7 @@ class RepairGoodie : public Goodie
 public:
     RepairGoodie(StudentWorld* w, double startX, double startY);
     virtual void doSomething();
+    virtual bool helpCollidingPlayer();
 };
 
 class TorpedoGoodie : public Goodie
@@ -264,6 +291,7 @@ class TorpedoGoodie : public Goodie
 public:
     TorpedoGoodie(StudentWorld* w, double startX, double startY);
     virtual void doSomething();
+    virtual bool helpCollidingPlayer();
 };
 
 #endif // ACTOR_H_

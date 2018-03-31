@@ -1,0 +1,45 @@
+Problem #2
+Consider this program:
+
+#include "Map.h"  // class template from problem 1
+
+class Coord
+{
+public:
+    Coord(int r, int c) : m_r(r), m_c(c) {}
+    Coord() : m_r(0), m_c(0) {}
+    double r() const { return m_r; }
+    double c() const { return m_c; }
+private:
+    double m_r;
+    double m_c;
+};
+
+int main()
+{
+    Map<int, double> mid;
+    mid.insert(42, -1.25);         // OK
+    Map<Coord, int> mpi;
+    mpi.insert(Coord(40,10), 32);  // error!
+}
+Explain in a sentence or two why the call to Map<Coord, int>::insert causes at least one compilation error. (Notice that the call to Map<int, double>::insert is fine.) Don't just transcribe a compiler error message; your answer must indicate you understand the the ultimate root cause of the problem and why that is connected to the call to Map<Coord, int>::insert.
+
+The insert function will search map to check and see if the coord instance is already in the map using the '!=' operator but there is no overload for the Coord class, causing the compilation error
+
+
+Problem #3b
+We introduced the two-parameter overload of listAll. Why could you not solve this problem given the constraints in part a if we had only a one-parameter listAll, and you had to implement it as the recursive function?
+
+The function would not be able to maintain the path of the previous recursive call and know what object is being named without both parameters
+
+Problem #4a
+
+The algorithm is O(N^3) as it has to move through three loops an N number of times
+
+Problem #4b
+
+Algorithm is still O(N^3) as the second loop will still have to run N times in the worst case scenario
+
+Probelem 5
+
+The time complexity is O(N^2) as the for loop will run N times and inside the loop the functions get(), insert(), and erase() will be called. All these three call the find() function with is worst case 1/2N. These calls combined with the loop form a time complexity of N*(2N) which is just O(N^2).

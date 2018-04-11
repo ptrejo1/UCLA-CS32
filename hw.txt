@@ -1,0 +1,114 @@
+1. a)
+50
+  20
+    10
+      xx
+      15
+    40
+      30
+        25
+        35
+      xx
+  60
+    xx
+    70
+      65
+      80
+        75
+        xx
+
+b) delete 30
+50
+  20
+    10
+      xx
+      15
+    40
+      35
+        25
+        xx
+      xx
+  60
+    xx
+    70
+      65
+      80
+        75
+        xx
+
+delete 20
+50
+  25
+    10
+      xx
+      15
+    40
+      35
+      xx
+  60
+    xx
+    70
+      65
+      80
+        75
+        xx
+
+c) pre-order: 50, 20, 10, 15, 40, 30, 25, 35, 60, 70, 65, 80, 75
+   in-order: 10, 15, 20, 25, 30, 35, 40, 50, 60, 65, 70, 75, 80
+   post-order: 15, 10, 25, 35, 30, 40, 20, 65, 75, 80, 70, 60, 50
+
+2. a)
+7
+ 3
+  1
+  2
+ 5
+  4
+
+b) [7, 3, 5, 1, 2, 4]
+
+c) [5, 3, 4, 1, 2]
+
+3. a)
+struct Node
+{
+	int m_value;
+	Node *left, *right, *parent;
+	Node()
+	{
+		m_value = 0;
+		parent = left = right = nullptr;
+	}
+};
+
+b)
+insert(newNode, rootPointer)
+	if tree is empty
+		rootPointer points to newNode
+		set newNode parent to null
+		Done
+	start at root
+	While not done
+		if newNode equal to current node
+			Done
+		if newNode value is less than current node
+			if current node has left child go left
+			else set newNode as current node's child and newNode's parent as current node
+			Done
+		if newNode value is greater than current node
+			if current node has right child go right
+			else set newNode as current node's child and newNode's parent as current node
+			Done
+
+4. 
+a) O(C + S)
+b) O(log(C) + S)
+c) O(log(C) + log(S))
+d) O(log(S))
+e) O(1)
+f) O(log(C) + S)
+g) O(S log(S)) 
+h) O(C log(S))
+
+
+
